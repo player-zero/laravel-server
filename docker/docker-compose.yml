@@ -1,0 +1,68 @@
+version: "3.7"
+services:
+  
+  app:
+    build:
+      args:
+        user: laravel-container
+        uid: 1000
+      context: ./../server
+      dockerfile: Dockerfile
+    image: forum
+    container_name: forum-app
+    restart: unless-stopped
+    environment:
+      DB_DATABASE: ${DB_DATABASE}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+    working_dir: /var/www/
+    volumes:
+      - ./../server:/var/www
+    networks:
+      - forum
+
+  db:
+    image: mysql:8.0.19
+    container_name: forum-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./db/data:/var/lib/mysql
+      - ./db/dump:/docker-entrypoint-initdb.d
+    networks:
+      - forum
+
+  nginx:
+    image: nginx:1.17-alpine
+    container_name: forum-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./../server:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+    networks:
+      - forum
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: forum-phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    networks:
+      - forum
+
+networks:
+  forum:
+    driver: bridge
+
